@@ -11,15 +11,37 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
         $model = $_POST['model'];
         $price = $_POST['price'];
 
-        $bulk = new MongoDB\Driver\BulkWrite;
-        $bulk->update(
-            ['_id' => $id],
-            ['$set' => [
-                'brand' => $brand,
-                'model' => $model,
-                'price' => $price,
-            ]]
-        );
+        if(isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        
+            $imageName = $_FILES['image']['name'];
+            $imageTemp = $_FILES['image']['tmp_name'];
+            $imagePath = "assets/" . $imageName;
+            move_uploaded_file($imageTemp, $imagePath);
+            $bulk = new MongoDB\Driver\BulkWrite;
+            $bulk->update(
+                ['_id' => $id],
+                ['$set' => [
+                    'brand' => $brand,
+                    'model' => $model,
+                    'price' => $price,
+                    'image' => $imagePath,
+                ]]
+            );
+        }
+        else{
+            $bulk = new MongoDB\Driver\BulkWrite;
+            $bulk->update(
+                ['_id' => $id],
+                ['$set' => [
+                    'brand' => $brand,
+                    'model' => $model,
+                    'price' => $price,
+                ]]
+            );
+            //echo '<p>Test</p>';
+        }
+
+        
 
         $client->executeBulkWrite('carsDB.cars', $bulk);
         header("Location: index.php");
@@ -41,7 +63,7 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 <body>
     <div class="container">
         <h1 class="mt-4">Edit Car</h1>
-        <form method="post" action="">
+        <form method="post" action="" enctype="multipart/form-data">
             <input type="hidden" name="id" value="<?php echo $car->_id; ?>">
             <div class="mb-3">
                 <label for="brand" class="form-label">Brand:</label>
@@ -55,7 +77,10 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
                 <label for="price" class="form-label">Price:</label>
                 <input type="number" class="form-control" id="price" name="price" value="<?php echo $car->price; ?>" required>
             </div>
-            
+            <div class="mb-3">
+                <label for="image">Car Image:</label>
+                <input type="file" class="form-control" id="image" name="image" value="<?php echo $car->image; ?>" accept="image/*"><br><br>
+            </div>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
     </div>
